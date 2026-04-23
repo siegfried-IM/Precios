@@ -26,6 +26,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 BASE = Path(r"C:\Users\camarinaro\Downloads\precios cardio")
 PRECIOS_XLSX = BASE / "Sin título - Tabla - 21 de abril de 2026.xlsx"
 IQVIA_XLSX = BASE / "AR_PM_FV_Standard_Apr-21-2026.xlsx"
+SEGMENT_XLSX = BASE / "segmentacion_productos.xlsx"
 OUT_XLSX = BASE / "Comparativa de precios Abr 2026.xlsx"
 
 COL_PVP_ANT = "PVP al 28/02/2026"
@@ -57,11 +58,11 @@ SIE_FILL = PatternFill("solid", fgColor="FFE699")  # amarillo claro
 SIE_FONT = Font(bold=True)
 LEADER_FILL = PatternFill("solid", fgColor="C6EFCE")  # verde claro para celda "Líder"
 
-# Anchos de columna — ahora A-M (se agrega col C "Dosis")
+# Anchos de columna A-N (N = Segm. al final)
 COL_WIDTHS = {
     "A": 22.83, "B": 20.83, "C": 12.00, "D": 28.83, "E": 14.83, "F": 14.83,
     "G": 12.83, "H": 8.83, "I": 10.83, "J": 10.83, "K": 12.83,
-    "L": 8.83, "M": 6.83,
+    "L": 8.83, "M": 6.83, "N": 13.00,
 }
 
 # ---------- Helpers de normalización ----------
@@ -288,6 +289,29 @@ def cargar_precios() -> pd.DataFrame:
     df["_mg"] = df["Presentacion"].map(extract_mg)
     df["_count"] = df["Presentacion"].map(extract_count)
     return df
+
+
+def cargar_segmentacion() -> dict:
+    """Lee segmentacion_productos.xlsx y devuelve dict {marca_norm → (segmentación, línea)}.
+    Ej: 'DILATREND' → ('Crónico', 'CARDIO-MET')."""
+    if not SEGMENT_XLSX.exists():
+        return {}
+    df = pd.read_excel(SEGMENT_XLSX, sheet_name="Segmentación Uso")
+    mapping: dict = {}
+    for _, r in df.iterrows():
+        seg = str(r.get("Segmentación uso", "")).strip()
+        linea = str(r.get("LINEA", "")).strip()
+        ddd = str(r.get("MERCADO ddd", "")).strip()
+        # El campo ddd puede traer "Dilatrend (Carvedilol)" — extraigo primer token
+        brand = re.split(r"\s*[(/]", ddd)[0].strip()
+        if not brand or brand.lower() == "nan":
+            continue
+        brand_norm = norm_prod(brand)
+        # Priorizar líneas puras CARDIO-MET, después otras
+        prev = mapping.get(brand_norm)
+        if prev is None or (linea == "CARDIO-MET" and "CARDIO-MET" not in str(prev[1])):
+            mapping[brand_norm] = (seg, linea)
+    return mapping
 
 
 def cargar_iqvia() -> pd.DataFrame:
@@ -545,13 +569,17 @@ def _dosis_display(dosis: str) -> str:
     return f"{_clean_num(dosis)} mg"
 
 
-def _escribir_bloque_dosis(ws, start_row: int, dosis: str, droga: str, comp: pd.DataFrame) -> int:
-    """Escribe subheader + filas. Columnas: A=Lab, B=Producto, C=Dosis (nueva), D=Presentación,
-    E=PVP Feb, F=PVP Abr, G=PVP/U, H=Var%, I=VS SIE, J=VS Líder, K=MAT, L=Share, M=Rank."""
+def _escribir_bloque_dosis(ws, start_row: int, dosis: str, droga: str, comp: pd.DataFrame,
+                             segm_info: tuple[str, str] = ("", "")) -> int:
+    """Escribe subheader + filas. Columnas A–N:
+    A=Lab, B=Producto, C=Dosis, D=Presentación, E=PVP Feb, F=PVP Abr, G=PVP/U,
+    H=Var%, I=VS SIE, J=VS Líder, K=MAT, L=Share, M=Rank, N=Segm."""
+    segm, linea = segm_info
     subhdr_row = start_row
-    subhdr_label = f"Dosis: {_dosis_display(dosis)} — {droga.lower()}"
+    seg_suffix = f" — {segm}" if segm else ""
+    subhdr_label = f"Dosis: {_dosis_display(dosis)} — {droga.lower()}{seg_suffix}"
     ws.cell(row=subhdr_row, column=1, value=subhdr_label)
-    ws.merge_cells(start_row=subhdr_row, start_column=1, end_row=subhdr_row, end_column=13)
+    ws.merge_cells(start_row=subhdr_row, start_column=1, end_row=subhdr_row, end_column=14)
     sub_cell = ws.cell(row=subhdr_row, column=1)
     sub_cell.fill = SUBHDR_FILL
     sub_cell.font = Font(bold=True, color="FFFFFF", size=11)
@@ -609,6 +637,7 @@ def _escribir_bloque_dosis(ws, start_row: int, dosis: str, droga: str, comp: pd.
         ws.cell(row=row, column=12,
                 value=f"=IFERROR(K{row}/SUM($K${first_row}:$K${last_row}),\"\")")  # L Share
         ws.cell(row=row, column=13, value=i + 1)  # M Ranking
+        ws.cell(row=row, column=14, value=segm)  # N Segmentación (misma para todo el bloque)
 
         # Formatos
         for c in (5, 6, 7):
@@ -620,7 +649,7 @@ def _escribir_bloque_dosis(ws, start_row: int, dosis: str, droga: str, comp: pd.
         ws.cell(row=row, column=10).number_format = "0.0%" if not is_leader else "General"
 
         if is_sie:
-            for c in range(1, 14):
+            for c in range(1, 15):
                 ws.cell(row=row, column=c).fill = SIE_FILL
                 ws.cell(row=row, column=c).font = SIE_FONT
         if is_leader:
@@ -630,7 +659,9 @@ def _escribir_bloque_dosis(ws, start_row: int, dosis: str, droga: str, comp: pd.
     return last_row + 2
 
 
-def escribir_excel(grupos: list[dict], precios: pd.DataFrame, out_path: Path):
+def escribir_excel(grupos: list[dict], precios: pd.DataFrame, out_path: Path,
+                    segm_map: dict | None = None):
+    segm_map = segm_map or {}
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
 
@@ -648,7 +679,7 @@ def escribir_excel(grupos: list[dict], precios: pd.DataFrame, out_path: Path):
         "Laboratorio", "Producto", "Dosis", "Presentación",
         LABEL_PVP_ANT, LABEL_PVP_ACT, "PVP/Unidad",
         "Var %", "VS SIE", "VS Líder",
-        "IQVIA MAT U.", "Share %", "Ranking",
+        "IQVIA MAT U.", "Share %", "Ranking", "Segm.",
     ]
 
     # Agrupar por marca
@@ -687,11 +718,17 @@ def escribir_excel(grupos: list[dict], precios: pd.DataFrame, out_path: Path):
             ws.column_dimensions[letter].width = w
         ws.freeze_panes = "A2"
 
+        # Segmentación para esta marca (se aplica a todas las filas del bloque)
+        # Busco la marca base en el map. Ej "EMPAX MET" → primer intento "EMPAX MET",
+        # si no, fallback al primer token "EMPAX"
+        segm_info = segm_map.get(marca) or segm_map.get(marca.split()[0] if marca else "", ("", ""))
+
         # Escribir cada bloque de dosis
         next_row = 2
         for grupo in grupos_marca:
             next_row = _escribir_bloque_dosis(
-                ws, next_row, grupo["dosis"], grupo["droga"], grupo["competidores"]
+                ws, next_row, grupo["dosis"], grupo["droga"], grupo["competidores"],
+                segm_info=segm_info,
             )
 
             # Fila en _Resumen
@@ -764,8 +801,12 @@ def main():
         print("\n(dry-run) Sin escribir Excel.")
         return
 
+    print("5.5) Cargando segmentación por uso…")
+    segm_map = cargar_segmentacion()
+    print(f"   {len(segm_map)} marcas mapeadas (Crónico/Agudo/Estacional)")
+
     print(f"\n6) Escribiendo {out_path.name}…")
-    escribir_excel(grupos, precios, out_path)
+    escribir_excel(grupos, precios, out_path, segm_map=segm_map)
     print(f"   ✓ guardado: {out_path}")
 
 
