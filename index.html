@@ -257,6 +257,18 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
 .exec-range-input{width:64px;padding:4px 8px;border:1px solid var(--warm-300);border-radius:4px;font-family:var(--font-mono);font-size:11px;color:var(--warm-800);outline:none;background:var(--white)}
 .exec-range-input:focus{border-color:var(--sieg-red)}
 .exec-range-input::-webkit-outer-spin-button,.exec-range-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.exec-explainer{margin:0 0 14px;border:1px solid var(--warm-200);border-radius:6px;background:#fcf6ed;overflow:hidden}
+.exec-explainer>summary{cursor:pointer;padding:10px 14px;font-family:var(--font-body);font-size:0.78rem;font-weight:600;color:var(--warm-700);user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+.exec-explainer>summary::-webkit-details-marker{display:none}
+.exec-explainer>summary::before{content:"B6";color:var(--sieg-red);font-size:0.6rem;transition:transform .15s}
+.exec-explainer[open]>summary::before{transform:rotate(90deg)}
+.exec-explainer>summary:hover{color:var(--sieg-red)}
+.exec-explainer-body{padding:6px 18px 14px;color:var(--warm-700);font-size:0.78rem;line-height:1.5}
+.exec-explainer-body p{margin:6px 0}
+.exec-explainer-body ul{margin:4px 0 6px;padding-left:18px}
+.exec-explainer-body li{margin:3px 0}
+.exec-explainer-body strong{color:var(--warm-900)}
+.exec-explainer-body em{color:var(--sieg-red);font-style:normal}
 .exec-tbl td{font-size:12.5px;padding:9px 12px;border-bottom:1px solid var(--warm-100);color:var(--warm-800)}
 .exec-tbl tr:last-child td{border-bottom:none}
 .exec-tbl .num{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
@@ -517,8 +529,8 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
     <header class="exec-head">
       <div>
         <div class="exec-eyebrow">1 &middot; Posicionamiento de Precio</div>
-        <h3 class="exec-title">&iquest;En qu&eacute; percentil est&aacute; cada SKU Siegfried?</h3>
-        <p class="exec-sub">Para cada producto con &geq;2 comparables exactos (misma mol&eacute;cula + forma + envase + concentraci&oacute;n), su ubicaci&oacute;n en la distribuci&oacute;n de precios del mercado. <strong>Zona baja (&lt;p25)</strong>: posible headroom. <strong>Premium (&gt;p75)</strong>: riesgo de perder share.</p>
+        <h3 class="exec-title">&iquest;D&oacute;nde est&aacute; cada SKU Siegfried en el ranking de precios del mercado?</h3>
+        <p class="exec-sub">Para cada producto con &geq;2 comparables exactos (misma mol&eacute;cula + forma + envase + concentraci&oacute;n) cruzo dos vistas: la <strong>posici&oacute;n en el ranking</strong> de precios (P0=m&aacute;s barato, P100=m&aacute;s caro) y el <strong>gap vs mediana</strong> (magnitud econ&oacute;mica de la diferencia). Hay que mirarlas juntas &mdash; abr&iacute; el panel debajo para ver ejemplos.</p>
       </div>
       <div class="exec-controls">
         <label class="exec-toggle"><input type="radio" name="posView" value="all" checked> Todos</label>
@@ -534,6 +546,24 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
         <button class="btn btn-outline btn-small" onclick="exportExec('positioning')">Exportar</button>
       </div>
     </header>
+    <details class="exec-explainer">
+      <summary>&iquest;Qu&eacute; muestra esta tabla?</summary>
+      <div class="exec-explainer-body">
+        <p>Para cada producto Siegfried comparo contra los competidores que tienen <strong>el mismo combo exacto</strong> (misma mol&eacute;cula + forma + envase + concentraci&oacute;n) y calculo:</p>
+        <ul>
+          <li><strong>P25 / Mediana / P75</strong>: los puntos clave de la distribuci&oacute;n de precios del mercado. Por debajo de P25 est&aacute; el 25% m&aacute;s barato; por encima de P75 el 25% m&aacute;s caro.</li>
+          <li><strong>Posici&oacute;n en mercado</strong>: en qu&eacute; lugar del ranking caemos. <em>P83 = somos m&aacute;s caros que el 83% del mercado</em>. Te dice posici&oacute;n relativa, no magnitud.</li>
+          <li><strong>Gap vs mediana</strong>: cu&aacute;nto % estamos por encima o por debajo del precio del medio. <em>Esto te dice la magnitud econ&oacute;mica</em>.</li>
+        </ul>
+        <p><strong>Cu&aacute;ndo importa cada una:</strong> mir&aacute; siempre <em>las dos juntas</em>. Posici&oacute;n alta + gap chico = irrelevante (mercado pegado). Posici&oacute;n baja + gap grande = oportunidad real de subir. Posici&oacute;n alta + gap grande = riesgo concreto de perder share.</p>
+        <p style="margin-top:8px"><strong>Ejemplos reales de tu portfolio:</strong></p>
+        <ul>
+          <li><strong>ACEMUK 600mg x10</strong>: P83 pero gap +1,2%. Estamos arriba de casi todos pero la diferencia es m&iacute;nima. <em>No requiere acci&oacute;n</em>.</li>
+          <li><strong>CEFALEXINA ARGENTI</strong>: P0 con gap &minus;65,5%. Somos los m&aacute;s baratos y muy lejos. <em>Headroom real para subir precio</em>.</li>
+          <li><strong>FER-IN-SOL</strong>: P100 con gap +44,8%. Somos los m&aacute;s caros y por mucho. <em>Riesgo de perder share</em>.</li>
+        </ul>
+      </div>
+    </details>
     <div class="table-wrap exec-tbl" id="execPositioning"></div>
   </section>
 
@@ -1576,10 +1606,11 @@ renderOportunidades();
       const a=Math.min(loV,hiV), b=Math.max(loV,hiV);
       rows=list.filter(r=>r.percentile>=a && r.percentile<=b);
     }
-    let h='<table><thead><tr><th>Producto'+arr+'</th><th>Mol&eacute;cula'+arr+'</th><th class="num">PVP/U Sieg'+arr+'</th><th class="num">P25 mkt'+arr+'</th><th class="num">Mediana'+arr+'</th><th class="num">P75 mkt'+arr+'</th><th class="num">Percentil'+arr+'</th><th class="num">vs Mediana'+arr+'</th><th class="num"># Comp.'+arr+'</th><th class="num">Unidades'+arr+'</th></tr></thead><tbody>';
+    let h='<table><thead><tr><th>Producto'+arr+'</th><th>Mol&eacute;cula'+arr+'</th><th class="num">PVP/U Sieg'+arr+'</th><th class="num">P25 mkt'+arr+'</th><th class="num">Mediana'+arr+'</th><th class="num">P75 mkt'+arr+'</th><th class="num" title="Posicion en el ranking de precios del mercado (P0=mas barato; P100=mas caro)">Posici&oacute;n en mercado'+arr+'</th><th class="num" title="Cuanto % esta nuestro PVP arriba o abajo de la mediana del mercado">Gap vs mediana'+arr+'</th><th class="num"># Comp.'+arr+'</th><th class="num">Unidades'+arr+'</th></tr></thead><tbody>';
     rows.forEach(r=>{
       const zoneClr=r.zone==='premium'?'delta-bad':r.zone==='low'?'delta-good':'delta-neutral';
-      const zoneTxt=r.zone==='premium'?'P'+r.percentile+' (premium)':r.zone==='low'?'P'+r.percentile+' (bajo)':'P'+r.percentile;
+      // Opcion A: sacar sufijo (premium)/(bajo), mostrar 'NN de 100'
+      const zoneTxt='P'+r.percentile+' <span style="color:var(--warm-400);font-weight:400">de 100</span>';
       const dCls=r.delta_median_pct>5?'delta-bad':r.delta_median_pct<-5?'delta-good':'delta-neutral';
       h+='<tr><td class="mol-cell" data-val="'+r.product+'">'+r.product+'</td><td data-val="'+r.molecule+'">'+r.molecule+'</td>'+
          '<td class="num" data-val="'+r.pvp_u_sieg+'">'+fmtCur2(r.pvp_u_sieg)+'</td>'+
