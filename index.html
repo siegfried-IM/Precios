@@ -277,7 +277,7 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
 .exec-tbl .delta-neutral{color:var(--warm-500)}
 .exec-tbl .mol-cell{font-weight:500;color:var(--warm-900)}
 /* Pareto */
-.pareto-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.pareto-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
 .pareto-stat{background:var(--cream);border:1px solid var(--warm-200);border-radius:6px;padding:14px 16px}
 .pareto-stat-label{font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.12em;color:var(--warm-500);text-transform:uppercase;margin-bottom:4px}
 .pareto-stat-val{font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:var(--warm-900);line-height:1.1}
@@ -304,14 +304,16 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
 .quad-mol-list .mol-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .quad-mol-list .mol-meta{font-family:var(--font-mono);color:var(--warm-500);white-space:nowrap}
 /* Headroom KPI strip */
-.exec-kpi-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.exec-kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
 .exec-kpi-strip .pareto-stat{margin:0}
 @media(max-width:768px){
   .exec-card{padding:16px 14px}
   .exec-title{font-size:1.05rem}
-  .pareto-stats,.quad-summary,.exec-kpi-strip{grid-template-columns:1fr 1fr}
-  .quad-grid{grid-template-columns:1fr}
+  /* .pareto-stats / .exec-kpi-strip usan auto-fit (minmax 150px) — se
+     adaptan solos, no forzar columnas fijas aca. */
   .pareto-chart{height:140px}
+  /* Bandas de precio: el label fijo de 180px es muy ancho en mobile */
+  #execBands > div > div[style*="grid-template-columns"]{grid-template-columns:110px 1fr 54px!important}
 }
 
 /* ── Two col layout ── */
@@ -667,7 +669,7 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
   <div class="page-title">Precios PAMI vs PVP vigente</div>
   <div class="page-sub">Productos con consumo registrado en PAMI (INSSJYP). Compara el <strong>PVP PAMI</strong> (precio reconocido por la obra social) con el <strong>PVP vigente</strong> (precio Kairos del mercado).</div>
 
-  <div id="pamiKpiStrip" class="exec-kpi-strip" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px"></div>
+  <div id="pamiKpiStrip" class="exec-kpi-strip" style="margin-bottom:14px"></div>
 
   <div class="toolbar">
     <input class="search-input" id="pamiSearch" placeholder="Buscar producto o familia..." autocomplete="off">
@@ -683,7 +685,7 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
   <div class="page-eyebrow">Base Plana</div>
   <div class="page-title">Datos crudos de Kairos</div>
   <div class="page-sub">Todas las filas del archivo Kairos tal como vienen del proveedor, sin matchear con IQVIA. &Uacute;til para verificar precios cuando un cruce automatico parece incorrecto. Pod&eacute;s buscar por producto / laboratorio / droga / presentaci&oacute;n y exportar el resultado a Excel.</div>
-  <div id="bpKpiStrip" class="exec-kpi-strip" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px"></div>
+  <div id="bpKpiStrip" class="exec-kpi-strip" style="margin-bottom:14px"></div>
   <div class="toolbar">
     <input class="search-input" id="bpSearch" placeholder="Buscar producto, laboratorio, droga, presentacion..." autocomplete="off" style="flex:1;max-width:520px">
     <select class="filter-select" id="bpLab"><option value="">Todos los laboratorios</option></select>
@@ -1789,7 +1791,7 @@ renderOportunidades();
     const products=w.products||[];
     const scenarios=w.scenarios||[3,5,8,10];
     const tot25=w.top25_totals||{},totP=w.portfolio_totals||{},curr=w.portfolio_current_revenue||0;
-    let strip='<div class="exec-kpi-strip" style="grid-template-columns:repeat('+(scenarios.length+1)+',1fr);margin-bottom:14px">';
+    let strip='<div class="exec-kpi-strip" style="margin-bottom:14px">';
     strip+='<div class="pareto-stat"><div class="pareto-stat-label">Revenue actual portfolio</div><div class="pareto-stat-val">'+fmtCurExec(curr)+'</div><div class="pareto-stat-sub">Base anual</div></div>';
     scenarios.forEach(p=>{
       strip+='<div class="pareto-stat"><div class="pareto-stat-label">Si subimos +'+p+'%</div><div class="pareto-stat-val" style="color:var(--green)">+'+fmtCurExec(totP['plus_'+p])+'</div><div class="pareto-stat-sub">Top 25 aportan '+fmtCurExec(tot25['plus_'+p])+'</div></div>';
