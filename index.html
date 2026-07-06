@@ -56,7 +56,7 @@ body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 .container{max-width:100%;margin:0 auto;padding:2rem 2rem 3rem}
 
 /* ── KPI cards ── */
-.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2.5rem}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2.5rem}
 .kpi-chip{background:var(--white);border:1px solid var(--warm-200);border-radius:var(--radius);padding:1.4rem 1.2rem;position:relative;overflow:hidden;box-shadow:var(--shadow-xs);transition:transform 0.2s,box-shadow 0.2s,border-color 0.2s;animation:fadeUp 0.5s ease both}
 .kpi-chip:nth-child(1){animation-delay:0.05s}
 .kpi-chip:nth-child(2){animation-delay:0.1s}
@@ -323,6 +323,16 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideRight{from{width:0}}
 
+/* ── Toast (mensajes no bloqueantes) ── */
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--warm-900);color:#fff;padding:12px 20px;border-radius:8px;font-size:0.85rem;font-family:var(--font-body);box-shadow:0 6px 24px rgba(0,0,0,0.25);z-index:2000;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:var(--sieg-red)}
+
+/* ── Accesibilidad: respetar reduccion de movimiento ── */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.001ms!important;animation-iteration-count:1!important;transition-duration:0.001ms!important;scroll-behavior:auto!important}
+}
+
 /* ── Responsive ── */
 @media(max-width:1280px){
   .nav{padding:0 2rem}
@@ -356,10 +366,9 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
   .tab-bar::-webkit-scrollbar{display:none}
   .tab-btn{padding:0.75rem 0.8rem;font-size:0.6rem;flex-shrink:0;letter-spacing:0.06em}
   .container{padding:1rem 1rem 1.5rem}
-  .kpi-row{grid-template-columns:repeat(2,1fr);gap:0.6rem;margin-bottom:1.5rem}
+  .kpi-row{gap:0.6rem;margin-bottom:1.5rem}
   .kpi-chip{padding:0.9rem 0.8rem}
   .kpi-val{font-size:1.5rem}
-  .kpi-chip:nth-child(5){grid-column:1/-1}
   /* Tablas: scroll horizontal + ancho mínimo para que no se aplasten columnas */
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .table-wrap table{table-layout:auto;min-width:720px;font-size:11px}
@@ -446,7 +455,11 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
 
 <!-- TAB 1: Top 10 -->
 <div class="tab-panel active" id="tab-top10">
-  <div class="page-eyebrow">Mercado</div>
+  <div class="page-eyebrow">Resumen</div>
+  <div class="page-title">Siegfried en el mercado</div>
+  <div class="page-sub">Indicadores clave del portafolio Siegfried (MAT Mar 2026).</div>
+  <div class="kpi-row" id="kpiRow"></div>
+  <div class="page-eyebrow" style="margin-top:0.5rem">Mercado</div>
   <div class="page-title">Top 10 Laboratorios Nacionales</div>
   <div class="page-sub">Ranking por unidades vendidas (MAT Mar 2026). Solo laboratorios nacionales. Variaci&oacute;n de precios: PVP 23/06/2026 &rarr; 06/07/2026.</div>
   <div class="two-col">
@@ -462,22 +475,22 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
   <div class="page-sub">Precios de Siegfried comparados con otros laboratorios, por molecula.</div>
   <div class="toolbar">
     <div class="mol-selector">
-      <input class="mol-input" id="molInputMercado" placeholder="Buscar molecula..." autocomplete="off">
+      <input class="mol-input" id="molInputMercado" aria-label="Buscar molecula" placeholder="Buscar molecula..." autocomplete="off">
       <div class="mol-dropdown" id="molDropMercado"></div>
     </div>
     <div class="filter-selector" id="mercadoProdSelector">
-      <input class="fs-input" id="mercadoFilterProd" placeholder="Filtrar producto..." autocomplete="off">
+      <input class="fs-input" id="mercadoFilterProd" aria-label="Filtrar por producto" placeholder="Filtrar producto..." autocomplete="off">
       <span class="fs-badge" id="mercadoProdBadge"></span>
       <button class="fs-clear" id="mercadoProdClear">&times;</button>
       <div class="fs-dropdown" id="mercadoProdDrop"></div>
     </div>
     <div class="filter-selector" id="mercadoLabSelector">
-      <input class="fs-input" id="mercadoFilterLab" placeholder="Filtrar laboratorio..." autocomplete="off">
+      <input class="fs-input" id="mercadoFilterLab" aria-label="Filtrar por laboratorio" placeholder="Filtrar laboratorio..." autocomplete="off">
       <span class="fs-badge" id="mercadoLabBadge"></span>
       <button class="fs-clear" id="mercadoLabClear">&times;</button>
       <div class="fs-dropdown" id="mercadoLabDrop"></div>
     </div>
-    <select class="filter-select" id="mercadoAccionFilter"><option value="">Todas las Acciones Terapéuticas</option></select>
+    <select class="filter-select" id="mercadoAccionFilter" aria-label="Filtrar por accion terapeutica"><option value="">Todas las Acciones Terapéuticas</option></select>
     <div class="view-toggle" style="display:none">
       <button class="btn btn-outline" id="mercViewProduct" style="display:none">Por Producto</button>
       <button class="btn btn-outline active" id="mercViewDetail">Por Presentacion</button>
@@ -495,8 +508,8 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
   <div class="page-title">Todos los Productos Siegfried</div>
   <div class="page-sub" id="portfolioSub"></div>
   <div class="toolbar">
-    <input class="search-input" id="portfolioSearch" placeholder="Buscar producto...">
-    <select class="filter-select" id="portfolioAccionFilter"><option value="">Todas las Acciones Terapéuticas</option></select>
+    <input class="search-input" id="portfolioSearch" aria-label="Buscar producto" placeholder="Buscar producto...">
+    <select class="filter-select" id="portfolioAccionFilter" aria-label="Filtrar por accion terapeutica"><option value="">Todas las Acciones Terapéuticas</option></select>
     <div class="view-toggle">
       <button class="btn btn-outline active" id="portViewProduct">Por Producto</button>
       <button class="btn btn-outline" id="portViewDetail">Por Presentacion</button>
@@ -542,9 +555,9 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
         <label class="exec-toggle"><input type="radio" name="posView" value="premium"> Premium (&gt;p75)</label>
         <span class="exec-range-group">
           <label class="exec-toggle"><input type="radio" name="posView" value="range"> Rango manual:</label>
-          <input id="posRangeMin" type="number" min="0" max="100" step="1" placeholder="Desde" class="exec-range-input">
+          <input id="posRangeMin" aria-label="Percentil desde" type="number" min="0" max="100" step="1" placeholder="Desde" class="exec-range-input">
           <span style="color:var(--warm-400);font-family:var(--font-mono);font-size:0.7rem">&ndash;</span>
-          <input id="posRangeMax" type="number" min="0" max="100" step="1" placeholder="Hasta" class="exec-range-input">
+          <input id="posRangeMax" aria-label="Percentil hasta" type="number" min="0" max="100" step="1" placeholder="Hasta" class="exec-range-input">
           <span style="color:var(--warm-500);font-family:var(--font-mono);font-size:0.65rem">percentil</span>
         </span>
         <button class="btn btn-outline btn-small" onclick="exportExec('positioning')">Exportar</button>
@@ -672,8 +685,8 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
   <div id="pamiKpiStrip" class="exec-kpi-strip" style="margin-bottom:14px"></div>
 
   <div class="toolbar">
-    <input class="search-input" id="pamiSearch" placeholder="Buscar producto o familia..." autocomplete="off">
-    <select class="filter-select" id="pamiFamilia"><option value="">Todas las familias</option></select>
+    <input class="search-input" id="pamiSearch" aria-label="Buscar producto o familia" placeholder="Buscar producto o familia..." autocomplete="off">
+    <select class="filter-select" id="pamiFamilia" aria-label="Filtrar por familia"><option value="">Todas las familias</option></select>
     <button class="btn btn-red" onclick="exportPami()" style="margin-left:auto">Exportar Excel</button>
   </div>
 
@@ -687,8 +700,8 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
   <div class="page-sub">Todas las filas del archivo Kairos tal como vienen del proveedor, sin matchear con IQVIA. &Uacute;til para verificar precios cuando un cruce automatico parece incorrecto. Pod&eacute;s buscar por producto / laboratorio / droga / presentaci&oacute;n y exportar el resultado a Excel.</div>
   <div id="bpKpiStrip" class="exec-kpi-strip" style="margin-bottom:14px"></div>
   <div class="toolbar">
-    <input class="search-input" id="bpSearch" placeholder="Buscar producto, laboratorio, droga, presentacion..." autocomplete="off" style="flex:1;max-width:520px">
-    <select class="filter-select" id="bpLab"><option value="">Todos los laboratorios</option></select>
+    <input class="search-input" id="bpSearch" aria-label="Buscar en base plana" placeholder="Buscar producto, laboratorio, droga, presentacion..." autocomplete="off" style="flex:1;max-width:520px">
+    <select class="filter-select" id="bpLab" aria-label="Filtrar por laboratorio"><option value="">Todos los laboratorios</option></select>
     <span id="bpCount" style="color:var(--warm-500);font-family:var(--font-mono);font-size:0.75rem"></span>
     <button class="btn btn-red" onclick="exportBasePlana()" style="margin-left:auto">Exportar Excel (todas las filas filtradas)</button>
   </div>
@@ -709,6 +722,13 @@ const fmtInt = v => {
   if(v==null||isNaN(v)) return '—';
   return Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');
 };
+function toast(msg, isErr){
+  let t=document.getElementById('_toast');
+  if(!t){t=document.createElement('div');t.id='_toast';t.className='toast';document.body.appendChild(t);}
+  t.textContent=msg; t.className='toast'+(isErr?' err':'');
+  requestAnimationFrame(()=>t.classList.add('show'));
+  clearTimeout(t._tmr); t._tmr=setTimeout(()=>t.classList.remove('show'),2800);
+}
 const fmtCur = v => {
   if(v==null||isNaN(v)||v<=0) return 's/d';
   return '$'+Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');
@@ -736,13 +756,19 @@ const fmtDec2 = v => {
 
 // ── Tab switching ──
 document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.setAttribute('role','tab');
   btn.addEventListener('click',()=>{
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});
     document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
+    btn.setAttribute('aria-selected','true');
     document.getElementById(btn.dataset.tab).classList.add('active');
+    // En mobile, traer la pestania activa a la vista (barra scrollable)
+    try{ btn.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'}); }catch(e){}
+    window.scrollTo({top:0,behavior:'smooth'});
   });
 });
+document.querySelector('.tab-bar')?.setAttribute('role','tablist');
 
 // ── Sortable tables ──
 function makeSortable(table){
@@ -809,6 +835,22 @@ function buildTable(cols,rows,opts={}){
 
 
 // ── TAB 1: Top 10 ──
+// ── KPIs de cabecera (D.kpis) ──
+(function renderKpis(){
+  const k=D.kpis; const el=document.getElementById('kpiRow');
+  if(!k||!el) return;
+  const fmtInt=v=>Number(v).toLocaleString('es-AR',{maximumFractionDigits:0});
+  const chips=[
+    {val:fmtInt(k.total_molecules), lbl:'Mol&eacute;culas donde compite', accent:'neutral'},
+    {val:fmtInt(k.n_lider), lbl:'Mol&eacute;culas lideradas', accent:'green', cls:'green'},
+    {val:(k.coverage!=null?k.coverage.toFixed(1)+'%':'-'), lbl:'Cobertura de matching', accent:'neutral'},
+    {val:(k.avg_position!=null?'#'+k.avg_position.toFixed(1):'-'), lbl:'Posici&oacute;n promedio', accent:'orange', cls:'orange'},
+    {val:(k.avg_price_var>0?'+':'')+ (k.avg_price_var!=null?k.avg_price_var.toFixed(1):'0') +'%', lbl:'Var. precios Siegfried (per&iacute;odo)', accent:'red', cls:'red'},
+    {val:fmtInt(k.total_units), lbl:'Unidades totales (MAT)', accent:'neutral'},
+  ];
+  el.innerHTML=chips.map(c=>'<div class="kpi-chip" data-accent="'+c.accent+'"><div class="kpi-val'+(c.cls?' '+c.cls:'')+'">'+c.val+'</div><div class="kpi-lbl">'+c.lbl+'</div></div>').join('');
+})();
+
 (function renderTopLabs(){
   const labs=D.top_labs;
   if(!labs||!labs.length) return;
@@ -1473,7 +1515,7 @@ function exportCurrentTab(tab){
 // Exportar la base completa (todos los productos: Siegfried + competidores)
 function exportFullBase(){
   if(!Array.isArray(D.flat)||D.flat.length===0){
-    alert('No hay datos para exportar.');
+    toast('No hay datos para exportar.',true);
     return;
   }
   const headers=[
@@ -1585,7 +1627,7 @@ function renderOportunidades(){
 
 function exportOportunidades(){
   const list=Array.isArray(D.below_leader)?D.below_leader:[];
-  if(list.length===0){alert('No hay datos para exportar.');return;}
+  if(list.length===0){toast('No hay datos para exportar.',true);return;}
   const headers=['Match Exacto','Molecula','Producto Siegfried','Presentacion Siegfried','Concentracion Sieg','Envase Sieg','Tipo Norm Sieg','PVP Sieg','PVP/U Sieg','Unidades Sieg','Participacion Sieg %','Lab Lider','Producto Lider','Presentacion Lider','Concentracion Lider','Envase Lider','Tipo Norm Lider','PVP Lider','PVP/U Lider','Dif % PVP','Dif % PVP/U'];
   const rows=[headers];
   list.slice().sort((a,b)=>(a.diff_pct||0)-(b.diff_pct||0)).forEach(o=>{
@@ -1875,7 +1917,7 @@ renderOportunidades();
 function exportExec(section){
   const ex=D.executive||{};
   const data=ex[section];
-  if(!data){alert('No hay datos.');return;}
+  if(!data){toast('No hay datos.',true);return;}
   let rows=[];
   if(section==='positioning'){
     rows=[['Producto','Pack','Molecula','PVP/U Sieg','P25 mkt','Mediana','P75 mkt','Min','Max','Percentil','vs Mediana %','# Competidores','Unidades','Zona']];
@@ -1990,7 +2032,7 @@ function exportExec(section){
 // Export PAMI a Excel
 function exportPami(){
   const rows=(D.pami||{rows:[]}).rows||[];
-  if(!rows.length){alert('No hay datos.');return;}
+  if(!rows.length){toast('No hay datos.',true);return;}
   const data=[['Familia','Producto','Unidades','% Uni cons','% Aporte PAMI','PVP PAMI','PVP vigente','Diferencia $','Diferencia %']];
   rows.forEach(r=>data.push([r.familia,r.producto,r.units,r.pct_units,r.pct_aporte,r.pvp_pami,r.pvp_vigente,r.diff_abs,r.diff_pct]));
   const wb=XLSX.utils.book_new();
@@ -2093,7 +2135,7 @@ function exportBasePlana(){
   const bp=D.b2_raw||{columns:[],rows:[]};
   const cols=bp.columns||[];
   const filtered=(typeof window._bpFiltered==='function')?window._bpFiltered():(bp.rows||[]);
-  if(!filtered.length){alert('No hay filas para exportar.');return;}
+  if(!filtered.length){toast('No hay filas para exportar.',true);return;}
   const data=[cols.slice()];
   filtered.forEach(r=>{
     const row=cols.map(c=>r[c]==null?'':r[c]);
