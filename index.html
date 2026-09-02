@@ -1392,7 +1392,7 @@ tr.sieg-row .share-bar-fill{background:var(--sieg-red)}
 <div class="hero">
   <div class="eyebrow">Tablero de Precios</div>
   <h1>Precios Siegfried</h1>
-  <div class="hero-sub">Fuente: KAIROS &middot; Precios actualizados al 31/08/2026 &middot; <span class="sello">build 20260831-1144</span></div>
+  <div class="hero-sub">Fuente: KAIROS &middot; Precios actualizados al 31/08/2026 &middot; <span class="sello">build 20260902-0912</span></div>
 </div>
 
 <!-- TABS -->
@@ -2501,7 +2501,12 @@ function hojaKairosAoA(filas){
   // posicion de cada fila en la hoja original (para las celdas crudas)
   let pos=window._bpPos;
   if(!pos){ pos=new Map(); (bp.rows||[]).forEach((r,i)=>pos.set(r,i)); window._bpPos=pos; }
-  const pvp=cols.filter(c=>c.label.indexOf('PVP al ')===0);
+  // Columnas PVP de la hoja ordenadas por fecha: se usan las DOS MAS
+  // RECIENTES, asi el % Var exportado sigue siendo "ultima contra anterior"
+  // aunque Kairos cambie la cantidad de columnas o su orden.
+  const fechaPvp=l=>{const m=l.match(/PVP al ([0-9]{2})[/]([0-9]{2})[/]([0-9]{4})/);return m?(m[3]+m[2]+m[1]):'';};
+  const pvp=cols.filter(c=>c.label.indexOf('PVP al ')===0).slice()
+                .sort((a,b)=>fechaPvp(a.label)<fechaPvp(b.label)?-1:1);
   const esFecha=l=>/Fecha|Vigencia/i.test(l);
   const aFecha=v=>{
     const m=String(v).match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})/);
@@ -2515,8 +2520,8 @@ function hojaKairosAoA(filas){
       if(o&&o[i]!==undefined) return o[i];      // celda cruda del Excel ("-")
       // El % Var de la hoja va contra SU propia columna anterior, no contra el
       // snapshot que usa el tablero: se recalcula de las dos columnas PVP.
-      if(c.label==='% Var'&&pvp.length===2){
-        const a=Number(val(r,pvp[0].key)), b=Number(val(r,pvp[1].key));
+      if(c.label==='% Var'&&pvp.length>=2){
+        const a=Number(val(r,pvp[pvp.length-2].key)), b=Number(val(r,pvp[pvp.length-1].key));
         return (a>0)?(b/a-1):'';
       }
       const v=val(r,c.key);
@@ -2529,11 +2534,15 @@ function hojaKairosAoA(filas){
 }
 
 function nombreHojaKairos(){
+  // el nombre lleva la fecha del snapshot MAS RECIENTE de la hoja
   const cols=(D.b2_sheet&&D.b2_sheet.columns)||[];
-  const pvp=cols.filter(c=>c.label.indexOf('PVP al ')===0);
-  const f=pvp.length?pvp[pvp.length-1].label.replace('PVP al ','').replace(/\//g,'-'):'';
+  const fechaPvp=l=>{const m=l.match(/PVP al ([0-9]{2})[/]([0-9]{2})[/]([0-9]{4})/);return m?(m[3]+m[2]+m[1]):'';};
+  const pvp=cols.filter(c=>c.label.indexOf('PVP al ')===0).slice()
+                  .sort((a,b)=>fechaPvp(a.label)<fechaPvp(b.label)?-1:1);
+  const f=pvp.length?pvp[pvp.length-1].label.replace('PVP al ','').split('/').join('-'):'';
   return 'kairos_base_plana_'+(f||'export')+'.xlsx';
 }
+
 
 // Boton de la barra superior: baja la hoja de Kairos COMPLETA, sin modificar.
 function exportFullBase(){
